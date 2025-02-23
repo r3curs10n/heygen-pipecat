@@ -23,5 +23,5 @@ python main.py
 
 0. Update Heygen API key in ui/index.html
 1. Open ui/index.html in a browser
-2. Click 'start' button
+2. Press 'Start' button
 3. When you see the video playing, press 'RecordAudio' button

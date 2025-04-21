@@ -4,6 +4,7 @@
     <title>HeyGen Streaming API LiveKit (V2)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/livekit-client/dist/livekit-client.umd.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@daily-co/daily-js"></script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   </head>
@@ -79,7 +80,7 @@
     <script>
       // Configuration
       const API_CONFIG = {
-        apiKey: "<api-key>",
+        apiKey: "N2U4NzE2ZGU1OTk5NGE5Mjk3YmRmMWQxMjQzOWE0YzEtMTc0MDI5NDc4Ng==",
         serverUrl: "https://api.heygen.com",
       };
 
@@ -314,6 +315,10 @@
           }
         );
 
+        if (window.websocket) {
+          window.websocket.close();
+        }
+
         // Close WebSocket
         if (webSocket) {
           webSocket.close();
@@ -362,15 +367,21 @@
       });
 
 function startStreamingAudio() {
+
+  window.call = window.Daily.createCallObject();
+  window.call.join({ url: "https://pivots.daily.co/room-shreyas" });
+
   // Replace with your WebSocket server URL
 // const socket = new WebSocket('ws://localhost:3001/user-audio-input?session_id=x&session_token=y&realtime_endpoint=z');
-const socket = new WebSocket(pipecatWebsocketUrl);
+  window.socket = new WebSocket(pipecatWebsocketUrl);
 // socket.binaryType = 'arraybuffer';
 
 // Wait for the socket to open
 socket.addEventListener('open', () => {
   console.log('WebSocket connection established.');
 });
+
+return;
 
 navigator.mediaDevices.getUserMedia({ audio: true })
   .then(stream => {

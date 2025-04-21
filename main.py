@@ -24,6 +24,7 @@ from pipecat.transports.network.fastapi_websocket import (
     FastAPIWebsocketParams,
     FastAPIWebsocketTransport,
 )
+from pipecat.transports.services.daily import DailyTransport, DailyParams
 from pipecat.audio.vad.silero import SileroVADAnalyzer
 from pipecat.transports.services.daily import WebRTCVADAnalyzer
 from pipecat.audio.vad.vad_analyzer import VADParams
@@ -65,67 +66,24 @@ async def run_bot(
             stop_secs=0.6,
             confidence=0.4,
         )
-        transport = FastAPIWebsocketTransport(
-            websocket=websocket_client,
-            params=FastAPIWebsocketParams(
+        
+        transport = DailyTransport(
+            "https://pivots.daily.co/room-shreyas",
+            None,
+            "HeyGen",
+            DailyParams(
                 audio_out_enabled=True,
-                add_wav_header=True,
+                camera_out_enabled=True,
+                camera_out_width=854,
+                camera_out_height=480,
                 vad_enabled=True,
-                vad_analyzer=SileroVADAnalyzer(params=params),
+                vad_analyzer=SileroVADAnalyzer(),
+                transcription_enabled=False,
                 vad_audio_passthrough=True,
-                serializer=ProtobufFrameSerializer(),
+                audio_out_channels=2,
+                audio_out_sample_rate=16000,
             ),
         )
-
-        # NOTE: Patching the receive_messages method to handle audio frames
-        # https://github.com/pipecat-ai/pipecat/issues/296
-        async def _patched_receive_messages(self: Any) -> None:
-            
-            # # Initialize PyAudio
-            # audio = pyaudio.PyAudio()
-
-            # # Open the stream for recording
-            # stream = audio.open(format=pyaudio.paInt16,
-            #                     channels=1,
-            #                     rate=16000,
-            #                     input=True,
-            #                     frames_per_buffer=512)
-            
-            # loop = asyncio.get_running_loop()
-            # queue = asyncio.Queue()
-
-            # def worker(loop, queue):
-            #     while True:
-            #         data = stream.read(512)
-            #         loop.call_soon_threadsafe(queue.put_nowait, data)
-            
-            # thread = threading.Thread(target=worker, args=(loop, queue), daemon=True)
-            # thread.start()
-
-            # while True:
-            #     data = await queue.get()
-            #     queue.task_done()
-            #     await self.push_audio_frame(AudioRawFrame(audio=data, sample_rate=16000, num_channels=1))
-
-            i = 0
-            dat = b""
-            async for message in self._websocket.iter_bytes():
-                # i += 1
-                # dat += message
-                # if (i == 150):
-                #     open("z.wav", "wb").write(dat)
-                # print(len(message))
-                # frame = self._params.serializer.deserialize(message)
-                frame = AudioRawFrame(audio=message, sample_rate=16000, num_channels=1)
-                if not frame:
-                    continue
-                if isinstance(frame, AudioRawFrame):
-                    await self.push_audio_frame(frame)
-                else:
-                    await self._internal_push_frame(frame)
-            await self._callbacks.on_client_disconnected(self._websocket)
-
-        transport._input._receive_messages = partial(_patched_receive_messages, transport._input)
 
         stt = DeepgramSTTService(
             api_key=deepgram_api_key,
@@ -200,11 +158,7 @@ async def run_bot(
             ),
         )
 
-        @transport.event_handler("on_client_connected")
-        async def on_client_connected(transport: Any, client: Any) -> None:
-            logger.info("Client connected.")
-
-        @transport.event_handler("on_client_disconnected")
+        @transport.event_handler("on_participant_left")
         async def on_client_disconnected(transport: Any, client: Any) -> None:
             logger.info("Client disconnected.")
             await task.queue_frames([EndFrame()])

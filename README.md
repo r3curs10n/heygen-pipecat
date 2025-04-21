@@ -1,6 +1,4 @@
-# End to end working prototype of Pipecat + HeyGen
-
-Need to replace websocket audio transport with Daily's webrtc transport for use in real apps
+# End to end working prototype of Daily + Pipecat + HeyGen
 
 ## Setup
 Python 3.11 is required. pyenv can be used to manage python versions.

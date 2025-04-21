@@ -315,8 +315,8 @@
           }
         );
 
-        if (window.websocket) {
-          window.websocket.close();
+        if (window.socket) {
+          window.socket.close();
         }
 
         // Close WebSocket
@@ -371,69 +371,13 @@ function startStreamingAudio() {
   window.call = window.Daily.createCallObject();
   window.call.join({ url: "https://pivots.daily.co/room-shreyas" });
 
-  // Replace with your WebSocket server URL
-// const socket = new WebSocket('ws://localhost:3001/user-audio-input?session_id=x&session_token=y&realtime_endpoint=z');
   window.socket = new WebSocket(pipecatWebsocketUrl);
-// socket.binaryType = 'arraybuffer';
 
-// Wait for the socket to open
-socket.addEventListener('open', () => {
-  console.log('WebSocket connection established.');
-});
-
-return;
-
-navigator.mediaDevices.getUserMedia({ audio: true })
-  .then(stream => {
-    const audioContext = new AudioContext({sampleRate: 16000});
-    const source = audioContext.createMediaStreamSource(stream);
-    
-    // Create a ScriptProcessorNode with a buffer size of 4096 and a single input/output channel.
-    const processor = audioContext.createScriptProcessor(512, 1, 1);
-
-    // Connect the audio graph: microphone -> processor -> (optional) speakers/destination.
-    source.connect(processor);
-    // Optionally, you can connect the processor to the destination to hear the audio:
-    // processor.connect(audioContext.destination);
-
-    processor.onaudioprocess = event => {
-      // Get the PCM data from the first channel (Float32Array with values in [-1, 1])
-      const floatSamples = event.inputBuffer.getChannelData(0);
-      // Convert Float32 samples to 16-bit PCM data
-      const int16Samples = convertFloat32ToInt16(floatSamples);
-
-      // If the socket is open, send the PCM data as an ArrayBuffer.
-      if (socket.readyState === WebSocket.OPEN) {
-        socket.send(int16Samples.buffer);
-      }
-    };
-
-    // Start processing audio
-    processor.connect(audioContext.destination);
-  })
-  .catch(error => {
-    console.error('Error accessing audio stream:', error);
+  // Wait for the socket to open
+  window.socket.addEventListener('open', () => {
+    console.log('WebSocket connection established.');
   });
-
 }
-
-/**
- * Converts a Float32Array (values between -1 and 1) to an Int16Array.
- * @param {Float32Array} float32Array - The input audio samples.
- * @return {Int16Array} The converted 16-bit PCM samples.
- */
- function convertFloat32ToInt16(float32Array) {
-  const int16Array = new Int16Array(float32Array.length);
-  for (let i = 0; i < float32Array.length; i++) {
-    let s = Math.max(-1, Math.min(1, float32Array[i]));
-    // Scale to 16-bit range
-    int16Array[i] = s < 0 ? s * 0x8000 : s * 0x7FFF;
-  }
-  return int16Array;
-}
-
-
-
     </script>
   </body>
 </html>
